@@ -15,7 +15,7 @@
             font-family: sans-serif;
             line-height: 1.4;
         }
-
+        
         .gif-header {
             border: 2px dashed #ccc;
             border-radius: 16px;
@@ -24,7 +24,7 @@
             padding: 10px;
             margin-bottom: 5px;
         }
-
+        
         .gif-color {
             width: 24px;
             height: 24px;
@@ -32,11 +32,11 @@
             border-radius: 6px;
             box-shadow: 0 .5em 1em -.125em rgba(10, 10, 10, .1), 0 0 0 1px rgba(10, 10, 10, .02);
         }
-
+        
         #gallery {
             margin-top: 10px;
         }
-
+        
         #gallery img {
             width: 150px;
             margin-bottom: 10px;
@@ -44,7 +44,7 @@
             vertical-align: middle;
             align-content: center;
         }
-
+        
         .buttonold {
             display: inline-block;
             padding: 10px;
@@ -53,13 +53,13 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-
+        
         .panel-grid {
             display: grid;
             grid-template-rows: 1fr;
             grid-template-columns: 1fr 1fr;
         }
-
+        
         #fileElem {
             display: none;
         }
@@ -74,9 +74,8 @@
             <section class='section'>
                 <div id="drop-area" class="box">
                     <form>
-                        <div class='container'>
-                            <p>Загрузите файл с помощью диалога выбора файлов или перетащив нужные файлы в выделенную
-                                область
+                        <div class='container has-text-centered'>
+                            <p>Загрузите файл с помощью диалога выбора файлов или перетащив нужные файлы в выделенную область
                             </p>
                             <input type="file" id="fileElem" accept=".dll" onchange="handleFiles(this.files)">
                             <label class="button is-info  is-fullwidth" for="fileElem">Выбрать файл</label>
@@ -132,7 +131,7 @@
             files.forEach(processFile);
         };
 
-        const readBuffer = async (inputFile, fromByte, toByte) => {
+        const readBuffer = async(inputFile, fromByte, toByte) => {
             const temporaryFileReader = new FileReader();
 
             return new Promise((resolve, reject) => {
@@ -150,7 +149,7 @@
         };
 
 
-        const readUploadedFile = async (inputFile) => {
+        const readUploadedFile = async(inputFile) => {
             const temporaryFileReader = new FileReader();
 
             return new Promise((resolve, reject) => {
@@ -173,40 +172,62 @@
             let dos = await readDosHeader(fileContents);
             let sign = await readSignature(fileContents, dos.e_lfanew);
             let fh = await readFileHeader(fileContents, dos.e_lfanew + 4);
+            let oh = await readOptHeader(fileContents, dos.e_lfanew + 24, fh.SizeOfOptionalHeader);
             fileContentDiv.innerHTML =
                 `<div class='panel is-info is-small'>
-                    <p class='panel-heading'>IMAGE_DOS_HEADER</p>
-                    <a class='panel-block'>
-                            <div class='control'><nav class='level is-mobile'>
-                            <div class='level-left'><div class='level-item'><p class='has-text-left'>e_lfanew</p></div></div>
-                            <div class='level-right'><div class='level-item'><p class='has-text-right'>${dos.e_lfanew}</p></div></div></nav></div>
-                    </div>
+                    <div class='panel-heading'>IMAGE_DOS_HEADER<span class='tag has-text-right'>64</span></div>
+                    ${row("e_lfanew", dos.e_lfanew)}
                 </div>`;
             fileContentDiv.innerHTML +=
                 `<div class='panel is-info is-small'>
-                    <p class='panel-heading'>IMAGE_NT_HEADERS </p>
-                    <div class='panel-block'>
-                        <table class='table is-fullwidth'>
-                            <tr><td>Signature</td><td>${sign.Signature}</td></tr>
-                        </table>
-                    </div>
+                    <p class='panel-heading'>IMAGE_NT_HEADERS</p>
+                    ${row("Signature", sign.Signature)}
                 </div>`;
             fileContentDiv.innerHTML +=
                 `<div class='panel is-info is-small'>
                     <p class='panel-heading'>IMAGE_FILE_HEADER</p>
-                    <div class='panel-block'><div class='control'>
-                        <table class='table'>
-                            <tr><td>Machine</td><td>${fh.Machine.toString(16)}</td></tr>
-                            <tr><td>NumberOfSections</td><td>${fh.NumberOfSections}</td></tr>
-                            <tr><td>TimeDateStamp</td><td>${fh.TimeDateStamp.toString(16)}</td></tr>
-                            <tr><td>PointerToSymbolTable</td><td>${fh.PointerToSymbolTable}</td></tr>
-                            <tr><td>NumberOfSymbols</td><td>${fh.NumberOfSymbols}</td></tr>
-                            <tr><td>SizeOfOptionalHeader</td><td>${fh.SizeOfOptionalHeader}</td></tr>
-                            <tr><td>Characteristics</td><td>${fh.Characteristics}</td></tr>
-                        </table></div>
-                    </div>
+                    ${row("Machine", fh.Machine.toString(16))}
+                    ${row("NumberOfSections", fh.NumberOfSections)}
+                    ${row("TimeDateStamp", fh.TimeDateStamp.toString(16))}
+                    ${row("PointerToSymbolTable", fh.PointerToSymbolTable)}
+                    ${row("NumberOfSymbols", fh.NumberOfSymbols)}
+                    ${row("SizeOfOptionalHeader", fh.SizeOfOptionalHeader)}
+                    ${row("Characteristics", fh.Characteristics.toString(16))}
+                </div>`;
+            fileContentDiv.innerHTML +=
+                `<div class='panel is-info is-small'>
+                    <p class='panel-heading'>IMAGE_OPTIONAL_HEADER</p>
+                    ${row("Magic", oh.Magic.toString(16))}
+                    ${row("MajorLinkerVersion", oh.MajorLinkerVersion)}
+                    ${row("MinorLinkerVersion", oh.MinorLinkerVersion)}
+                    ${row("SizeOfCode", oh.SizeOfCode)}
+                    ${row("SizeOfInitializedData", oh.SizeOfInitializedData)}
+                    ${row("SizeOfUninitializedData", oh.SizeOfUninitializedData)}
+                    ${row("AddressOfEntryPoint", oh.AddressOfEntryPoint)}
+                    ${row("BaseOfCode", oh.BaseOfCode)}
+                    ${row("ImageBase", oh.ImageBase)}
                 </div>`;
         };
+
+        function row(name, value) {
+            return `<span class='panel-block'>
+                <div class='control'>
+                    <nav class='level is-mobile'>
+                        <div class='level-left'>
+                            <div class='level-item'>
+                                <p class='has-text-left'>${name}</p>
+                            </div>
+                        </div>
+                        <div class='level-right'>
+                            <div class='level-item'>
+                                <p class='has-text-right'>${value}</p>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </span>            
+            `;
+        }
 
         async function readDosHeader(buf) {
             return {
@@ -218,7 +239,7 @@
             let utf8decoder = new TextDecoder();
             let buffer = new Uint8Array(buf, offset, 4);
             return {
-                Signature: utf8decoder.decode(buffer),
+                Signature: `${utf8decoder.decode(buffer)}\\${buffer[2]}\\${buffer[3]}`,
             };
         }
 
@@ -227,10 +248,25 @@
                 Machine: new Uint16Array(buf, offset)[0],
                 NumberOfSections: new Uint16Array(buf, offset)[1],
                 TimeDateStamp: new Uint32Array(buf, offset)[1],
-                PointerToSymbolTable: new Uint32Array(offset, 0)[2],
-                NumberOfSymbols: new Uint32Array(offset, 0)[3],
-                SizeOfOptionalHeader: new Uint16Array(offset, 0)[8],
-                Characteristics: new Uint16Array(offset, 0)[9],
+                PointerToSymbolTable: new Uint32Array(buf, offset)[2],
+                NumberOfSymbols: new Uint32Array(buf, offset)[3],
+                SizeOfOptionalHeader: new Uint16Array(buf, offset)[8],
+                Characteristics: new Uint16Array(buf, offset)[9],
+            };
+        }
+
+        async function readOptHeader(buf, offset, size) {
+            console.log(new Uint16Array(buf, offset));
+            return {
+                Magic: new Uint16Array(buf, offset)[0],
+                MajorLinkerVersion: new Uint8Array(buf, offset)[2],
+                MinorLinkerVersion: new Uint8Array(buf, offset)[3],
+                SizeOfCode: new Uint16Array(buf, offset)[2],
+                SizeOfInitializedData: new Uint16Array(buf, offset)[3],
+                SizeOfUninitializedData: new Uint16Array(buf, offset)[4],
+                AddressOfEntryPoint: new Uint16Array(buf, offset)[5],
+                BaseOfCode: new Uint16Array(buf, offset)[6],
+                ImageBase: new BigUint64Array(buf, offset + 14)[0],
             };
         }
     </script>
