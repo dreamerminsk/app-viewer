@@ -15,9 +15,10 @@ async function processFile(f) {
         let sects = await readSections(new DataView(fileContents, sectOffset), fh.NumberOfSections);
 
         fileContentDiv.innerHTML =
-            `<div class='panel is-info is-small'>
-                <div class='panel-heading'>${f.Name}</div>
-                ${row("HEADERS", 0)}
+            `<div class='panel is-info'>
+                <div class='panel-heading'>${f.name}</div>
+                ${subheader(0, f.size)}
+                ${row("HEADERS", oh.SizeOfHeaders)}
             </div>`;
 
         fileContentDiv.innerHTML +=
@@ -74,6 +75,23 @@ async function processFile(f) {
     }
 };
 
+
+function subheader(offset, size) {
+    return `
+    <span class='panel-block'>
+        <div class="control is-inline">
+            <div class="tags has-addons is-inline">
+                <span class="tag is-dark">offset</span>
+                <span class="tag is-info">${offset}</span>
+            </div>
+            <div class="tags has-addons is-inline">
+                <span class="tag is-dark">size</span>
+                <span class="tag is-info">${size}</span>
+            </div>
+        </div>
+    </span>          
+    `;
+}
 
 
 function entry_row(name, ispresent) {
