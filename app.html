@@ -5,67 +5,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>App Format Viewer</title>
+    <link rel="stylesheet" href="app.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <script defer src="view.js"></script>
+    <script defer src="pe.js"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-
-    <style>
-        body {
-            margin: 0;
-            padding: 5px;
-            font-family: sans-serif;
-            line-height: 1.4;
-        }
-        
-        .gif-header {
-            border: 2px dashed #ccc;
-            border-radius: 16px;
-            width: 620px;
-            font-family: sans-serif;
-            padding: 10px;
-            margin-bottom: 5px;
-        }
-        
-        .gif-color {
-            width: 24px;
-            height: 24px;
-            border: 2px solid gray;
-            border-radius: 6px;
-            box-shadow: 0 .5em 1em -.125em rgba(10, 10, 10, .1), 0 0 0 1px rgba(10, 10, 10, .02);
-        }
-        
-        #gallery {
-            margin-top: 10px;
-        }
-        
-        #gallery img {
-            width: 150px;
-            margin-bottom: 10px;
-            margin-right: 10px;
-            vertical-align: middle;
-            align-content: center;
-        }
-        
-        .buttonold {
-            display: inline-block;
-            padding: 10px;
-            background: #ccc;
-            cursor: pointer;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        
-        .panel-grid {
-            display: grid;
-            grid-template-rows: 1fr;
-            grid-template-columns: 1fr 1fr;
-        }
-        
-        #fileElem {
-            display: none;
-        }
-    </style>
-    <script>
-    </script>
 </head>
 
 <body>
@@ -75,7 +19,7 @@
                 <div id="drop-area" class="box">
                     <form>
                         <div class='container has-text-centered'>
-                            <p>Загрузите файл с помощью диалога выбора файлов или перетащив нужные файлы в выделенную область
+                            <p class='drop-zone'>Загрузите файл с помощью диалога выбора файлов или перетащив нужные файлы в выделенную область
                             </p>
                             <input type="file" id="fileElem" accept=".dll" onchange="handleFiles(this.files)">
                             <label class="button is-info  is-fullwidth" for="fileElem">Выбрать файл</label>
@@ -87,189 +31,7 @@
                 <div id="file-content" class='container'></div>
             </section>
         </div>
-
     </div>
-
-    <script>
-        let dropArea = document.getElementById('drop-area');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        };
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight(e) {
-            dropArea.classList.add('highlight');
-        };
-
-        function unhighlight(e) {
-            dropArea.classList.remove('highlight');
-        };
-
-        dropArea.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            let dt = e.dataTransfer;
-            let files = dt.files;
-            handleFiles(files);
-        };
-
-        function handleFiles(files) {
-            files = [...files];
-            files.forEach(processFile);
-        };
-
-        const readBuffer = async(inputFile, fromByte, toByte) => {
-            const temporaryFileReader = new FileReader();
-
-            return new Promise((resolve, reject) => {
-                temporaryFileReader.onerror = () => {
-                    temporaryFileReader.abort();
-                    reject(new DOMException("Problem parsing input file."));
-                };
-
-                temporaryFileReader.onload = () => {
-                    resolve(temporaryFileReader.result);
-                };
-                var blob = inputFile.slice(fromByte, toByte);
-                temporaryFileReader.readAsArrayBuffer(blob);
-            });
-        };
-
-
-        const readUploadedFile = async(inputFile) => {
-            const temporaryFileReader = new FileReader();
-
-            return new Promise((resolve, reject) => {
-                temporaryFileReader.onerror = () => {
-                    temporaryFileReader.abort();
-                    reject(new DOMException("Problem parsing input file."));
-                };
-
-                temporaryFileReader.onload = () => {
-                    resolve(temporaryFileReader.result);
-                };
-
-                temporaryFileReader.readAsArrayBuffer(inputFile);
-            });
-        };
-
-        async function processFile(f) {
-            const fileContentDiv = document.querySelector('div#file-content');
-            const fileContents = await readBuffer(f, 0, 512);
-            let dos = await readDosHeader(fileContents);
-            let sign = await readSignature(fileContents, dos.e_lfanew);
-            let fh = await readFileHeader(fileContents, dos.e_lfanew + 4);
-            let oh = await readOptHeader(fileContents, dos.e_lfanew + 24, fh.SizeOfOptionalHeader);
-            fileContentDiv.innerHTML =
-                `<div class='panel is-info is-small'>
-                    <div class='panel-heading'>IMAGE_DOS_HEADER<span class='tag has-text-right'>64</span></div>
-                    ${row("e_lfanew", dos.e_lfanew)}
-                </div>`;
-            fileContentDiv.innerHTML +=
-                `<div class='panel is-info is-small'>
-                    <p class='panel-heading'>IMAGE_NT_HEADERS</p>
-                    ${row("Signature", sign.Signature)}
-                </div>`;
-            fileContentDiv.innerHTML +=
-                `<div class='panel is-info is-small'>
-                    <p class='panel-heading'>IMAGE_FILE_HEADER</p>
-                    ${row("Machine", fh.Machine.toString(16))}
-                    ${row("NumberOfSections", fh.NumberOfSections)}
-                    ${row("TimeDateStamp", fh.TimeDateStamp.toString(16))}
-                    ${row("PointerToSymbolTable", fh.PointerToSymbolTable)}
-                    ${row("NumberOfSymbols", fh.NumberOfSymbols)}
-                    ${row("SizeOfOptionalHeader", fh.SizeOfOptionalHeader)}
-                    ${row("Characteristics", fh.Characteristics.toString(16))}
-                </div>`;
-            fileContentDiv.innerHTML +=
-                `<div class='panel is-info is-small'>
-                    <p class='panel-heading'>IMAGE_OPTIONAL_HEADER</p>
-                    ${row("Magic", oh.Magic.toString(16))}
-                    ${row("MajorLinkerVersion", oh.MajorLinkerVersion)}
-                    ${row("MinorLinkerVersion", oh.MinorLinkerVersion)}
-                    ${row("SizeOfCode", oh.SizeOfCode)}
-                    ${row("SizeOfInitializedData", oh.SizeOfInitializedData)}
-                    ${row("SizeOfUninitializedData", oh.SizeOfUninitializedData)}
-                    ${row("AddressOfEntryPoint", oh.AddressOfEntryPoint)}
-                    ${row("BaseOfCode", oh.BaseOfCode)}
-                    ${row("ImageBase", oh.ImageBase)}
-                </div>`;
-        };
-
-        function row(name, value) {
-            return `<span class='panel-block'>
-                <div class='control'>
-                    <nav class='level is-mobile'>
-                        <div class='level-left'>
-                            <div class='level-item'>
-                                <p class='has-text-left'>${name}</p>
-                            </div>
-                        </div>
-                        <div class='level-right'>
-                            <div class='level-item'>
-                                <p class='has-text-right'>${value}</p>
-                            </div>
-                        </div>
-                    </nav>
-                </div>
-            </span>            
-            `;
-        }
-
-        async function readDosHeader(buf) {
-            return {
-                e_lfanew: new Uint32Array(buf, 0)[15],
-            };
-        }
-
-        async function readSignature(buf, offset) {
-            let utf8decoder = new TextDecoder();
-            let buffer = new Uint8Array(buf, offset, 4);
-            return {
-                Signature: `${utf8decoder.decode(buffer)}\\${buffer[2]}\\${buffer[3]}`,
-            };
-        }
-
-        async function readFileHeader(buf, offset) {
-            return {
-                Machine: new Uint16Array(buf, offset)[0],
-                NumberOfSections: new Uint16Array(buf, offset)[1],
-                TimeDateStamp: new Uint32Array(buf, offset)[1],
-                PointerToSymbolTable: new Uint32Array(buf, offset)[2],
-                NumberOfSymbols: new Uint32Array(buf, offset)[3],
-                SizeOfOptionalHeader: new Uint16Array(buf, offset)[8],
-                Characteristics: new Uint16Array(buf, offset)[9],
-            };
-        }
-
-        async function readOptHeader(buf, offset, size) {
-            console.log(new Uint16Array(buf, offset));
-            return {
-                Magic: new Uint16Array(buf, offset)[0],
-                MajorLinkerVersion: new Uint8Array(buf, offset)[2],
-                MinorLinkerVersion: new Uint8Array(buf, offset)[3],
-                SizeOfCode: new Uint16Array(buf, offset)[2],
-                SizeOfInitializedData: new Uint16Array(buf, offset)[3],
-                SizeOfUninitializedData: new Uint16Array(buf, offset)[4],
-                AddressOfEntryPoint: new Uint16Array(buf, offset)[5],
-                BaseOfCode: new Uint16Array(buf, offset)[6],
-                ImageBase: new BigUint64Array(buf, offset + 14)[0],
-            };
-        }
-    </script>
 </body>
 
 </html>
