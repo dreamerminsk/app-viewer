@@ -19,6 +19,9 @@ async function processFile(f) {
                 <div class='panel-heading'>${f.name}</div>
                 ${subheader(0, f.size)}
                 ${row("HEADERS", oh.SizeOfHeaders)}
+                ${sects.map((sect, idx) => `
+                    ${row(sect.Name, sect.SizeOfRawData)}
+                `).join('')}
             </div>`;
 
         fileContentDiv.innerHTML +=
@@ -73,13 +76,13 @@ async function processFile(f) {
     } catch (e) {
         fileContentDiv.innerHTML += e.message
     }
-};
+}
 
 
 function subheader(offset, size) {
     return `
     <span class='panel-block'>
-        <div class="control is-inline">
+        <div class="control">
             <div class="tags has-addons is-inline">
                 <span class="tag is-dark">offset</span>
                 <span class="tag is-info">${offset}</span>
