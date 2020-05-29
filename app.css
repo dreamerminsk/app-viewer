@@ -6,8 +6,8 @@ body {
 }
 
 .drop-zone {
-    border: 2px dashed #209CEE;
-    border-radius: 16px;
+    border: 3px dotted #209CEE;
+    border-radius: 20px;
     margin-bottom: 12px;
 }
 

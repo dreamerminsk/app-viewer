@@ -1,6 +1,6 @@
 async function processFile(f) {
     const fileContentDiv = document.querySelector('div#file-content');
-    const fileContents = await readBuffer(f, 0, 1024);
+    const fileContents = await readBuffer(f, 0, 4096);
     try {
         let dos = await readDosHeader(fileContents);
         let sign = await readSignature(fileContents, dos.e_lfanew);
@@ -18,9 +18,9 @@ async function processFile(f) {
             `<div class='panel is-info'>
                 <div class='panel-heading'>${f.name}</div>
                 ${subheader(0, f.size)}
-                ${row("HEADERS", oh.SizeOfHeaders)}
+                ${rowRefs("HEADERS", oh.SizeOfHeaders)}
                 ${sects.map((sect, idx) => `
-                    ${row(sect.Name, sect.SizeOfRawData)}
+                    ${rowRefs(sect.Name, sect.SizeOfRawData)}
                 `).join('')}
             </div>`;
 
@@ -82,15 +82,15 @@ async function processFile(f) {
 function subheader(offset, size) {
     return `
     <span class='panel-block'>
-        <div class="control">
-            <div class="tags has-addons is-inline">
+        <div class="control is-inline">
+            <span class="tags has-addons is-inline">
                 <span class="tag is-dark">offset</span>
                 <span class="tag is-info">${offset}</span>
-            </div>
-            <div class="tags has-addons is-inline">
+            </span>
+            <span class="tags has-addons is-inline">
                 <span class="tag is-dark">size</span>
                 <span class="tag is-info">${size}</span>
-            </div>
+            </span>
         </div>
     </span>          
     `;
@@ -107,6 +107,26 @@ function entry_row(name, ispresent) {
             </p>
         </div>
     </span>            
+    `;
+}
+
+function rowRefs(name, value) {
+    return `<a class='panel-block'>
+        <div class='control'>
+            <nav class='level is-mobile'>
+                <div class='level-left'>
+                    <div class='level-item'>
+                        <p class='has-text-left'>${name}</p>
+                    </div>
+                </div>
+                <div class='level-right'>
+                    <div class='level-item'>
+                        <p class='has-text-right'>${value}</p>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </a>            
     `;
 }
 
