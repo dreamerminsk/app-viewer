@@ -34,6 +34,12 @@ const readUploadedFile = async(inputFile) => {
 };
 
 
+class PEFile {
+    constructor() {
+
+    }
+}
+
 
 
 async function readDosHeader(buf) {

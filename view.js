@@ -11,32 +11,55 @@ async function processFile(f) {
             new DataView(fileContents, dirOffset),
             oh.NumberOfRvaAndSizes);
         let sectOffset = dirOffset + 8 * 16;
-        console.log(sectOffset);
         let sects = await readSections(new DataView(fileContents, sectOffset), fh.NumberOfSections);
 
-        fileContentDiv.innerHTML =
-            `<div class='panel is-info'>
-                <div class='panel-heading'>${f.name}</div>
-                ${subheader(0, f.size)}
-                ${rowRefs("HEADERS", oh.SizeOfHeaders)}
-                ${sects.map((sect, idx) => `
-                    ${rowRefs(sect.Name, sect.SizeOfRawData)}
-                `).join('')}
-            </div>`;
+        fileContentDiv.innerHTML = FilePropsView(f);
+        fileContentDiv.innerHTML += DosView(dos);
+        fileContentDiv.innerHTML += NTView(sign);
+        fileContentDiv.innerHTML += FileView(fh);
+        fileContentDiv.innerHTML += OptionalView(oh);
+        fileContentDiv.innerHTML += DirsView(dirs);
+        fileContentDiv.innerHTML += SectsView(sects);
+        fileContentDiv.innerHTML += SectorListView(sects);
+    } catch (e) {
+        fileContentDiv.innerHTML += `
+        <div class="notification is-danger">
+            <button class="delete"></button>
+            ${e.message}
+        </div>`;
+    }
+}
 
-        fileContentDiv.innerHTML +=
-            `<div class='panel is-info is-small'>
-            <div class='panel-heading'>IMAGE_DOS_HEADER</div>
+function FilePropsView(f) {
+    let lm = new Date(f.lastModified);
+    return `<div class='panel is-link'>
+                <div class='panel-heading'>${f.name}</div>
+                ${rowRefs('type', f.type)}
+                 ${rowRefs('size', f.size)}
+                 ${rowRefs('lastModified', `${lm.toLocaleDateString()} ${lm.toLocaleTimeString()}`)}
+                ${Object.keys(f).map((sect, idx) => `
+                    ${rowRefs(sect, f[sect])}
+                `).join('')}
+            </div>`
+}
+
+function DosView(dos) {
+    return `<div class='panel is-info is-small'>
+            <div class='panel-heading'>DOS HEADER</div>
             ${row("e_lfanew", dos.e_lfanew)}
         </div>`;
-        fileContentDiv.innerHTML +=
-            `<div class='panel is-info is-small'>
-            <p class='panel-heading'>IMAGE_NT_HEADERS</p>
+}
+
+function NTView(sign) {
+    return `<div class='panel is-info is-small'>
+            <p class='panel-heading'>NT HEADERS</p>
             ${row("Signature", sign.Signature)}
         </div>`;
-        fileContentDiv.innerHTML +=
-            `<div class='panel is-info is-small'>
-            <p class='panel-heading'>IMAGE_FILE_HEADER</p>
+}
+
+function FileView(fh) {
+    return `<div class='panel is-info is-small'>
+            <p class='panel-heading'>FILE HEADER</p>
             ${row("Machine", fh.Machine.toString(16))}
             ${row("NumberOfSections", fh.NumberOfSections)}
             ${row("TimeDateStamp", fh.TimeDateStamp.toString(16))}
@@ -45,26 +68,30 @@ async function processFile(f) {
             ${row("SizeOfOptionalHeader", fh.SizeOfOptionalHeader)}
             ${row("Characteristics", fh.Characteristics.toString(16))}
         </div>`;
-        fileContentDiv.innerHTML +=
-            `<div class='panel is-info is-small'>
-            <p class='panel-heading'>IMAGE_OPTIONAL_HEADER</p>
-            ${Object.keys(oh).map((color, idx) => `
-                ${row(color, oh[color])}
-            `).join('')}
-        </div>`;
+}
 
-        fileContentDiv.innerHTML +=
-            `<div class='panel is-info is-small'>
-            <p class='panel-heading'>IMAGE_DATA_DIRECTORIES</p>
+function OptionalView(oh) {
+    return `<div class='panel is-info is-small'>
+    <p class='panel-heading'>OPTIONAL HEADER</p>
+    ${Object.keys(oh).map((color, idx) => `
+        ${row(color, oh[color])}
+    `).join('')}
+</div>`;
+}
+
+function DirsView(dirs) {
+    return `<div class='panel is-info is-small'>
+            <p class='panel-heading'>DATA DIRECTORIES</p>
             ${dirs.map((color, idx) => `
                 ${entry_row(getDirName(idx), color.Size > 0)}
                 ${row("VirtualAddress", color.VirtualAddress, color.Size > 0)}
                 ${row("Size", color.Size, color.Size > 0)}
             `).join('')}
         </div>`;
+}
 
-        fileContentDiv.innerHTML +=
-            `<div class='panel is-info is-small'>
+function SectsView(sects) {
+    return `<div class='panel is-info is-small'>
             <p class='panel-heading'>IMAGE_DATA_SECTIONS</p>
             ${sects.map((sect, idx) => `
                 ${entry_row(sect.Name, true)}
@@ -73,25 +100,35 @@ async function processFile(f) {
             `).join('')}
             `).join('')}
         </div>`;
-    } catch (e) {
-        fileContentDiv.innerHTML += e.message
-    }
 }
 
+function SectorListView(sects) {
+    return `
+    ${sects.map((sect, idx) => `
+        <div class='panel is-info'>
+        <div class='panel-heading'>${sect.Name}</div>
+        ${subheader(sect.PointerToRawData, sect.SizeOfRawData)}
+        </div>
+        `).join('')}
+    `
+}
 
 function subheader(offset, size) {
-    return `
-    <span class='panel-block'>
-        <div class="control is-inline">
-            <span class="tags has-addons is-inline">
-                <span class="tag is-dark">offset</span>
-                <span class="tag is-info">${offset}</span>
-            </span>
-            <span class="tags has-addons is-inline">
-                <span class="tag is-dark">size</span>
-                <span class="tag is-info">${size}</span>
-            </span>
-        </div>
+    return `<span class='panel-block'>
+    <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+            <div class="tags has-addons">
+                 <a class="tag is-dark">offset</a> 
+                 <a class="tag is-link">${offset}</a>
+             </div> 
+        </div> 
+        <div class="control">
+            <div class="tags has-addons">
+                <a class="tag is-dark">size</a>
+                <a class="tag is-link">${size}</a>
+            </div>
+         </div>
+      </div>
     </span>          
     `;
 }
@@ -156,16 +193,16 @@ let dropArea = document.getElementById('drop-area');
 
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     dropArea.addEventListener(eventName, preventDefaults, false);
-});
+})
 
 function preventDefaults(e) {
     e.preventDefault();
     e.stopPropagation();
-};
+}
 
 ['dragenter', 'dragover'].forEach(eventName => {
     dropArea.addEventListener(eventName, highlight, false);
-});
+})
 
 ['dragleave', 'drop'].forEach(eventName => {
     dropArea.addEventListener(eventName, unhighlight, false);
@@ -173,11 +210,11 @@ function preventDefaults(e) {
 
 function highlight(e) {
     dropArea.classList.add('highlight');
-};
+}
 
 function unhighlight(e) {
     dropArea.classList.remove('highlight');
-};
+}
 
 dropArea.addEventListener('drop', handleDrop, false);
 
@@ -185,9 +222,9 @@ function handleDrop(e) {
     let dt = e.dataTransfer;
     let files = dt.files;
     handleFiles(files);
-};
+}
 
 function handleFiles(files) {
     files = [...files];
     files.forEach(processFile);
-};
+}
