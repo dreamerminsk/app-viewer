@@ -10,7 +10,7 @@ const _readBuffer = (inputFile, fromByte, toByte) => {
         temporaryFileReader.onload = () => {
             resolve(temporaryFileReader.result);
         };
-        let blob = inputFile.slice(fromByte, toByte);
+        const blob = inputFile.slice(fromByte, toByte);
         temporaryFileReader.readAsArrayBuffer(blob);
     });
 };

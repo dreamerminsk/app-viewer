@@ -73,7 +73,7 @@ function FileView(fh) {
 function OptionalView(oh) {
     return `<div class='panel is-info is-small'>
     <p class='panel-heading'>OPTIONAL HEADER</p>
-    ${Object.keys(oh).map((color, idx) => `
+    ${Object.keys(oh).map((color, _idx) => `
         ${row(color, oh[color])}
     `).join('')}
 </div>`;
