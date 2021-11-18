@@ -1,4 +1,4 @@
-const readBuffer = async(inputFile, fromByte, toByte) => {
+const _readBuffer = (inputFile, fromByte, toByte) => {
     const temporaryFileReader = new FileReader();
 
     return new Promise((resolve, reject) => {
@@ -10,13 +10,13 @@ const readBuffer = async(inputFile, fromByte, toByte) => {
         temporaryFileReader.onload = () => {
             resolve(temporaryFileReader.result);
         };
-        var blob = inputFile.slice(fromByte, toByte);
+        let blob = inputFile.slice(fromByte, toByte);
         temporaryFileReader.readAsArrayBuffer(blob);
     });
 };
 
 
-const readUploadedFile = async(inputFile) => {
+const _readUploadedFile = (inputFile) => {
     const temporaryFileReader = new FileReader();
 
     return new Promise((resolve, reject) => {
@@ -34,7 +34,7 @@ const readUploadedFile = async(inputFile) => {
 };
 
 
-class PEFile {
+class _PEFile {
     constructor() {
 
     }
@@ -42,21 +42,21 @@ class PEFile {
 
 
 
-async function readDosHeader(buf) {
+function _readDosHeader(buf) {
     return {
         e_lfanew: new Uint32Array(buf, 0)[15],
     };
 }
 
-async function readSignature(buf, offset) {
-    let utf8decoder = new TextDecoder();
-    let buffer = new Uint8Array(buf, offset, 4);
+function _readSignature(buf, offset) {
+    const utf8decoder = new TextDecoder();
+    const buffer = new Uint8Array(buf, offset, 4);
     return {
         Signature: `${utf8decoder.decode(buffer)}\\${buffer[2]}\\${buffer[3]}`,
     };
 }
 
-async function readFileHeader(buf, offset) {
+function _readFileHeader(buf, offset) {
     return {
         Machine: new Uint16Array(buf, offset)[0],
         NumberOfSections: new Uint16Array(buf, offset)[1],
@@ -68,9 +68,9 @@ async function readFileHeader(buf, offset) {
     };
 }
 
-async function readOptHeader(buf, offset, size) {
-    let b = new DataView(buf, offset);
-    let magic = b.getUint16(0, true);
+async function _readOptHeader(buf, offset, _size) {
+    const b = new DataView(buf, offset);
+    const magic = b.getUint16(0, true);
     if (magic == 267) {
         return await readOptHeader32(b);
     } else if (magic == 523) {
@@ -82,7 +82,7 @@ async function readOptHeader(buf, offset, size) {
     }
 }
 
-async function readOptHeader32(buf) {
+function readOptHeader32(buf) {
     return {
         Magic: buf.getUint16(0, true).toString(16),
         MajorLinkerVersion: buf.getUint8(2, true),
@@ -118,7 +118,7 @@ async function readOptHeader32(buf) {
 }
 
 
-async function readOptHeader64(buf) {
+function readOptHeader64(buf) {
     return {
         Magic: buf.getUint16(0, true).toString(16),
         MajorLinkerVersion: buf.getUint8(2, true),
@@ -152,7 +152,7 @@ async function readOptHeader64(buf) {
     };
 }
 
-function getDirName(idx) {
+function _getDirName(idx) {
     switch (idx) {
         case 0:
             return "ENTRY_EXPORT";
@@ -191,8 +191,8 @@ function getDirName(idx) {
     }
 }
 
-async function readDirectories(buf, count) {
-    let dirs = [];
+function _readDirectories(buf, count) {
+    const dirs = [];
     console.log(buf);
     for (let i = 0; i < count; i++) {
         dirs.push({
@@ -203,8 +203,8 @@ async function readDirectories(buf, count) {
     return dirs;
 }
 
-async function readSections(buf, count) {
-    let dirs = [];
+async function _readSections(buf, count) {
+    const dirs = [];
     console.log(buf);
     for (let i = 0; i < count; i++) {
         dirs.push({
@@ -223,7 +223,7 @@ async function readSections(buf, count) {
     return dirs;
 }
 
-async function readString(buf, pos, length) {
-    let utf8decoder = new TextDecoder();
+function readString(buf, pos, length) {
+    const utf8decoder = new TextDecoder();
     return utf8decoder.decode(new Uint8Array(buf.buffer, pos, length));
 }

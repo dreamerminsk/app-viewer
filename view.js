@@ -2,16 +2,16 @@ async function processFile(f) {
     const fileContentDiv = document.querySelector('div#file-content');
     const fileContents = await readBuffer(f, 0, 4096);
     try {
-        let dos = await readDosHeader(fileContents);
-        let sign = await readSignature(fileContents, dos.e_lfanew);
-        let fh = await readFileHeader(fileContents, dos.e_lfanew + 4);
-        let oh = await readOptHeader(fileContents, dos.e_lfanew + 24, fh.SizeOfOptionalHeader);
-        let dirOffset = dos.e_lfanew + 24 + (oh.Magic == "10b" ? 96 : 112);
-        let dirs = await readDirectories(
+        const dos = await readDosHeader(fileContents);
+        const sign = await readSignature(fileContents, dos.e_lfanew);
+        const fh = await readFileHeader(fileContents, dos.e_lfanew + 4);
+        const oh = await readOptHeader(fileContents, dos.e_lfanew + 24, fh.SizeOfOptionalHeader);
+        const dirOffset = dos.e_lfanew + 24 + (oh.Magic == "10b" ? 96 : 112);
+        const dirs = await readDirectories(
             new DataView(fileContents, dirOffset),
             oh.NumberOfRvaAndSizes);
-        let sectOffset = dirOffset + 8 * 16;
-        let sects = await readSections(new DataView(fileContents, sectOffset), fh.NumberOfSections);
+        const sectOffset = dirOffset + 8 * 16;
+        const sects = await readSections(new DataView(fileContents, sectOffset), fh.NumberOfSections);
 
         fileContentDiv.innerHTML = FilePropsView(f);
         fileContentDiv.innerHTML += DosView(dos);
@@ -31,13 +31,13 @@ async function processFile(f) {
 }
 
 function FilePropsView(f) {
-    let lm = new Date(f.lastModified);
+    const lm = new Date(f.lastModified);
     return `<div class='panel is-link'>
                 <div class='panel-heading'>${f.name}</div>
                 ${rowRefs('type', f.type)}
                  ${rowRefs('size', f.size)}
                  ${rowRefs('lastModified', `${lm.toLocaleDateString()} ${lm.toLocaleTimeString()}`)}
-                ${Object.keys(f).map((sect, idx) => `
+                ${Object.keys(f).map((sect, _idx) => `
                     ${rowRefs(sect, f[sect])}
                 `).join('')}
             </div>`
@@ -83,7 +83,7 @@ function DirsView(dirs) {
     return `<div class='panel is-info is-small'>
             <p class='panel-heading'>DATA DIRECTORIES</p>
             ${dirs.map((color, idx) => `
-                ${entry_row(getDirName(idx), color.Size > 0)}
+                ${entryRow(getDirName(idx), color.Size > 0)}
                 ${row("VirtualAddress", color.VirtualAddress, color.Size > 0)}
                 ${row("Size", color.Size, color.Size > 0)}
             `).join('')}
@@ -93,9 +93,9 @@ function DirsView(dirs) {
 function SectsView(sects) {
     return `<div class='panel is-info is-small'>
             <p class='panel-heading'>IMAGE_DATA_SECTIONS</p>
-            ${sects.map((sect, idx) => `
-                ${entry_row(sect.Name, true)}
-                ${Object.keys(sect).map((prop, idx) => `
+            ${sects.map((sect, _idx) => `
+                ${entryRow(sect.Name, true)}
+                ${Object.keys(sect).map((prop, _idx) => `
                 ${row(prop, sect[prop])}
             `).join('')}
             `).join('')}
@@ -104,7 +104,7 @@ function SectsView(sects) {
 
 function SectorListView(sects) {
     return `
-    ${sects.map((sect, idx) => `
+    ${sects.map((sect, _idx) => `
         <div class='panel is-info'>
         <div class='panel-heading'>${sect.Name}</div>
         ${subheader(sect.PointerToRawData, sect.SizeOfRawData)}
@@ -134,7 +134,7 @@ function subheader(offset, size) {
 }
 
 
-function entry_row(name, ispresent) {
+function entryRow(name, ispresent) {
     return `<span class='panel-block'>
         <div class='control'>
             <p ${ispresent ?
@@ -189,7 +189,7 @@ function row(name, value, ispresent = true) {
 
 
 
-let dropArea = document.getElementById('drop-area');
+const dropArea = document.getElementById('drop-area');
 
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     dropArea.addEventListener(eventName, preventDefaults, false);
@@ -208,19 +208,19 @@ function preventDefaults(e) {
     dropArea.addEventListener(eventName, unhighlight, false);
 });
 
-function highlight(e) {
+function highlight(_e) {
     dropArea.classList.add('highlight');
 }
 
-function unhighlight(e) {
+function unhighlight(_e) {
     dropArea.classList.remove('highlight');
 }
 
 dropArea.addEventListener('drop', handleDrop, false);
 
 function handleDrop(e) {
-    let dt = e.dataTransfer;
-    let files = dt.files;
+    const dt = e.dataTransfer;
+    const files = dt.files;
     handleFiles(files);
 }
 
